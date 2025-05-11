@@ -1,0 +1,173 @@
+from telegram.ext import Application, MessageHandler, filters, CommandHandler, ConversationHandler
+from telegram import ReplyKeyboardMarkup
+import requests
+import sys
+import requests
+import random
+
+async def start(update, context):
+    user = update.effective_user
+    await update.message.reply_html(
+        rf"Выберите режим игры",
+        reply_markup=markup
+    )
+    return 1
+
+async def stop(update, context):
+    await update.message.reply_text("Спасибо за игру")
+    return ConversationHandler.END
+
+async def first_response(update, context):
+    if update.message.text == 'Города':
+        await cities_command(update, context)
+        print(city)
+
+    return 2
+
+async def second_response(update, context):
+    reply_keyboard = [['Да'], ['Нет']]
+    if update.message.text == city:
+        await update.message.reply_text('Вы угадали')
+    else:
+        await update.message.reply_text('Вы не угадали. это был город ' + city)
+    await update.message.reply_text('Сыграем еще раз?', reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+    return 3
+
+async def third_response(update, context):
+    if update.message.text == 'Да':
+        await cities_command(update, context)
+        print(city)
+        return 2
+    elif update.message.text == 'Нет':
+        await stop(update, context)
+
+async def cities_command(update, context):
+    global city
+    city = random.choice(cities)
+    text = city + random.choice(places)
+    search_api_server = "https://search-maps.yandex.ru/v1/"
+    api_key = "dda3ddba-c9ea-4ead-9010-f43fbc15c6e3"
+    search_params = {
+        "apikey": api_key,
+        "text": text,
+        "lang": "ru_RU",
+        "type": "biz"
+    }
+    response = requests.get(search_api_server, params=search_params)
+    if not response:
+        pass
+    json_response = response.json()
+    organization = json_response["features"][0]
+    org_name = organization["properties"]["CompanyMetaData"]["name"]
+    org_address = organization["properties"]["CompanyMetaData"]["address"]
+    point = organization["geometry"]["coordinates"]
+    org_point = f"{point[0]},{point[1]}"
+    delta = "0.0017"
+    apikey = "f3a0fe3a-b07e-4840-a1da-06f18b2ddf13"
+
+    map_params = {
+        "spn": ",".join([delta, delta]),
+        "apikey": apikey,
+        "pt": "{0},pm2dgl".format(org_point)
+    }
+
+    map_api_server = "https://static-maps.yandex.ru/v1"
+    response = requests.get(map_api_server, params=map_params)
+    reply_keyboard = [[city], [random.choice(cities)], [random.choice(cities)], [random.choice(cities)]]
+    random.shuffle(reply_keyboard)
+    await context.bot.send_photo(
+        update.message.chat_id,
+        response.content,
+        caption="Угадайте город на карте", reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+    )
+
+cities = [
+        "Москва",  # Россия
+        "Санкт-Петербург",  # Россия
+        "Лондон",  # Великобритания
+        "Париж",  # Франция
+        "Берлин",  # Германия
+        "Мадрид",  # Испания
+        "Рим",  # Италия
+        "Токио",  # Япония
+        "Сидней",  # Австралия
+        "Канберра",  # Австралия
+        "Пекин",  # Китай
+        "Сеул",  # Южная Корея
+        "Нью-Дели",  # Индия
+        "Тайбэй",  # Тайвань
+        "Куала-Лумпур",  # Малайзия
+        "Сингапур",  # Сингапур
+        "Бразилиа",  # Бразилия
+        "Буэнос-Айрес",  # Аргентина
+        "Мехико",  # Мексика
+        "Лима",  # Перу
+        "Нью-Йорк",  # США
+        "Лос-Анджелес",  # США
+        "Чикаго",  # США
+        "Хьюстон",  # США
+        "Торонто",  # Канада
+        "Ванкувер",  # Канада
+        "Москва",  # Россия
+        "Стокгольм",  # Швеция
+        "Осло",  # Норвегия
+        "Копенгаген",  # Дания
+        "Амстердам",  # Нидерланды
+        "Цюрих",  # Швейцария
+        "Вена",  # Австрия
+        "Прага",  # Чехия
+        "Будапешт",  # Венгрия
+        "Дублин",  # Ирландия
+        "Афины",  # Греция
+        "Киев",  # Украина
+        "Тбилиси",  # Грузия
+        "Доха",  # Катар
+        "Абу-Даби",  # ОАЭ
+        "Багдад",  # Ирак
+        "Тегеран",  # Иран
+        "Касабланка",  # Марокко
+        "Нairobi",  # Кения
+        "Лагос",  # Нигерия
+        "Сантьяго",  # Чили
+        "Каракас"  # Венесуэла
+        "Екатеринбург",  # Россия
+        "Новосибирск",  # Россия
+        "Казань",  # Россия
+        "Нижний Новгород",  # Россия
+        "Челябинск",  # Россия
+        "Самара",  # Россия
+        "Омск",  # Россия
+        "Ростов-на-Дону",  # Россия
+        "Уфа",  # Россия
+        "Волгоград"  # Россия
+    ]
+places = [
+        "Аптека",  # Место для покупки лекарств и медицинских товаров
+        "Парк",  # Открытое пространство для отдыха и прогулок
+        "Кафе",  # Заведение для отдыха с напитками и легкими закусками
+        "Ресторан",  # Заведение для полноценного питания
+        "Магазин",  # Общий термин для магазинов различного профиля
+        "Спортзал",  # Место для занятий спортом и фитнесом
+        "Школа",  # Учебное заведение для детей и подростков
+        "Больница",  # Учреждение для оказания медицинской помощи
+        "Супермаркет",  # Большой магазин с разнообразными товарами
+        "Автобусная остановка"  # Место ожидания общественного транспорта
+    ]
+city = ''
+application = Application.builder().token('7623013219:AAHcxmtfMGNgR6Cd8xg7Ax40dLVmJPx6A9U').build()
+conv_handler = ConversationHandler(
+    entry_points=[CommandHandler('start', start)],
+    states={
+        1: [MessageHandler(filters.TEXT & ~filters.COMMAND, first_response)],
+        2: [MessageHandler(filters.TEXT & ~filters.COMMAND, second_response)],
+        3: [MessageHandler(filters.TEXT & ~filters.COMMAND, third_response)]
+    },
+
+    fallbacks=[CommandHandler('stop', stop)]
+)
+application.add_handler(conv_handler)
+reply_keyboard = [['Города']]
+markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+application.run_polling()
+
+
