@@ -63,7 +63,7 @@ async def cities_command(update, context):
     point = organization["geometry"]["coordinates"]
     org_point = f"{point[0]},{point[1]}"
     delta = "0.0017"
-    apikey = "f3a0fe3a-b07e-4840-a1da-06f18b2ddf13"
+    apikey = ""
 
     map_params = {
         "spn": ",".join([delta, delta]),
@@ -154,7 +154,7 @@ places = [
         "Автобусная остановка"  # Место ожидания общественного транспорта
     ]
 city = ''
-application = Application.builder().token('7623013219:AAHcxmtfMGNgR6Cd8xg7Ax40dLVmJPx6A9U').build()
+application = Application.builder().token().build()
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler('start', start)],
     states={
